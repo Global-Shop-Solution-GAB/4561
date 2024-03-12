@@ -1,0 +1,368 @@
+Program.Sub.ScreenSU.Start
+Gui.fTrueViewMaint..Create
+Gui.fTrueViewMaint..Caption("TrueView Maintenance")
+Gui.fTrueViewMaint..Size(6450,2370)
+Gui.fTrueViewMaint..MinX(0)
+Gui.fTrueViewMaint..MinY(0)
+Gui.fTrueViewMaint..Position(0,0)
+Gui.fTrueViewMaint..BackColor(-2147483633)
+Gui.fTrueViewMaint..MousePointer(0)
+Gui.fTrueViewMaint..MaxButton(False)
+Gui.fTrueViewMaint..Sizeable(False)
+Gui.fTrueViewMaint..Event(UnLoad,fTrueViewMaint_UnLoad)
+Gui.fTrueViewMaint.txtFileLoc1.Create(TextBox,"",True,5430,300,0,105,315,True,0,"Arial",8,-2147483643,1)
+Gui.fTrueViewMaint.txtFileLoc1.Locked(True)
+Gui.fTrueViewMaint.CmdBrowse.Create(Button)
+Gui.fTrueViewMaint.CmdBrowse.Size(405,345)
+Gui.fTrueViewMaint.CmdBrowse.Position(5655,285)
+Gui.fTrueViewMaint.CmdBrowse.Caption("^")
+Gui.fTrueViewMaint.CmdBrowse.Event(Click,CmdBrowse_Click)
+Gui.fTrueViewMaint.txtRefreshRt.Create(TextBox,"",True,945,300,0,105,915,True,0,"Arial",8,-2147483643,1)
+Gui.fTrueViewMaint.txtRefreshRt.NumericOnly(2)
+Gui.fTrueViewMaint.cmdSave.Create(Button)
+Gui.fTrueViewMaint.cmdSave.Size(945,375)
+Gui.fTrueViewMaint.cmdSave.Position(105,1305)
+Gui.fTrueViewMaint.cmdSave.Caption("Save")
+Gui.fTrueViewMaint.cmdSave.Event(Click,cmdSave_Click)
+Gui.fTrueViewMaint.lbl1.Create(Label,"Company Logo (PNG)",True,1935,255,0,105,105,True,0,"Arial",8,-2147483633,0)
+Gui.fTrueViewMaint.lbl2.Create(Label,"Refresh Rate (Minutes)",True,1935,255,0,105,705,True,0,"Arial",8,-2147483633,0)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+v.Global.sProcessIDfile.Declare(string)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+V.Local.bExists.Declare(Boolean)
+V.Local.sCheckFile.Declare(String)
+
+f.Intrinsic.Control.Try
+f.ODBC.Connection!conx.OpenConnection(v.Ambient.PDSN,v.Ambient.PUser,v.Ambient.PPass)
+
+'f.intrinsic.Control.If(v.Caller.Switches,=,"M")
+'	f.Intrinsic.Control.CallSub(maint)
+'f.Intrinsic.Control.Else
+	f.Intrinsic.String.Build("{0}\GCG_4561_PID.txt",v.Caller.GasDir,v.Global.sProcessIDfile)
+	f.Intrinsic.file.Exists(v.Global.sProcessIDfile,v.Local.bExists)
+	f.Intrinsic.control.If(v.Local.bExists,=,false)
+		f.Intrinsic.File.String2File(v.Global.sProcessIDfile,v.Ambient.PID)
+	f.Intrinsic.control.Else
+		f.Intrinsic.File.File2String(v.global.sProcessIDfile,v.Local.sCheckFile)
+		f.Intrinsic.Control.If(v.Local.sCheckFile,<>,"")
+			f.Intrinsic.task.PIDRunning(v.Local.sCheckFile,v.Local.bExists)
+			f.Intrinsic.Control.If(v.Local.bExists,=,false)
+				f.intrinsic.File.String2File(v.Global.sProcessIDfile,v.Ambient.PID)
+			f.Intrinsic.Control.Else
+				f.Intrinsic.Control.End
+			f.Intrinsic.Control.EndIf
+		f.Intrinsic.Control.Else
+			f.intrinsic.File.String2File(v.Global.sProcessIDfile,v.Ambient.PID)
+		f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.CallSub(TrueView)
+'f.Intrinsic.Control.EndIf
+'update the log  with error details
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+
+
+Program.Sub.Main.End
+
+Program.Sub.maint.Start
+f.Intrinsic.Control.try
+v.Local.sProjFold.Declare(string)
+v.Local.sFile.Declare(string)
+v.Local.sBrowseFold.declare(string)
+v.Local.bCheck.Declare(boolean)
+v.Local.sBrowse.declare(string)
+v.Local.sSleepFile.Declare(string)
+v.Local.sSleep.Declare(string)
+
+f.Intrinsic.string.Build("{0}\TrueView",v.Caller.GlobalDir,v.local.sProjFold)
+f.Intrinsic.file.DirExists(v.Local.sProjFold, v.Local.bCheck)
+f.Intrinsic.Control.If(v.Local.bCheck,<>,true)
+	f.Intrinsic.File.CreateDir(v.local.sProjFold)
+f.Intrinsic.Control.EndIf
+f.Intrinsic.String.Build("{0}\4561",v.local.sProjFold,v.local.sProjFold)
+f.Intrinsic.file.DirExists(v.Local.sProjFold, v.Local.bCheck)
+f.Intrinsic.Control.If(v.Local.bCheck,<>,true)
+	f.Intrinsic.String.Build("{0}\4561.zip",v.Caller.GasDir,v.Local.sFile)
+	f.Intrinsic.string.Build("{0}\TrueView",v.Caller.GlobalDir,v.local.sProjFold)
+	f.Automation.Zip.UnZip(v.Local.sFile,v.Local.sProjFold)
+f.Intrinsic.Control.EndIf
+f.Intrinsic.String.Build("{0}\TrueView\4561",v.Caller.GlobalDir,v.local.sProjFold)
+f.Intrinsic.String.Build("{0}\CompanyLogo.png",v.local.sProjFold,v.local.sFile)
+Function.Intrinsic.File.Exists(v.Local.sFile, v.Local.bCheck)
+f.Intrinsic.Control.if(v.local.bCheck,<>,true)
+	gui.fTrueViewMaint.txtFileLoc1.Text("***No Logo File Exists. Browse and Select a Logo File***")
+f.Intrinsic.Control.Else
+	gui.fTrueViewMaint.txtFileLoc1.Text("CompanyLogo.png")
+	gui.fTrueViewMaint.txtFileLoc1.SetMetaData(v.Local.sfile)
+f.Intrinsic.Control.endIf
+f.Intrinsic.String.Build("{0}\Sleep.txt",v.local.sProjFold,v.local.sFile)
+Function.Intrinsic.File.Exists(v.Local.sFile, v.Local.bCheck)
+f.Intrinsic.Control.if(v.local.bCheck,=,true)
+	f.intrinsic.file.File2String(v.Local.sFile,v.Local.sSleep)
+	gui.fTrueViewMaint.txtRefreshRt.Text(v.Local.sSleep)
+f.Intrinsic.Control.Else
+	f.Intrinsic.file.String2File(v.Local.sfile,"2")	
+	gui.fTrueViewMaint.txtRefreshRt.Text("2")
+f.Intrinsic.Control.endIf
+f.intrinsic.Control.If(v.Caller.Switches,=,"M")
+	gui.fTrueViewMaint..Show
+f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.maint.End
+
+Program.Sub.TrueView.Start
+V.Local.sError.Declare(String)
+v.Local.sFile.Declare(String)
+v.Local.sFile1.Declare(String)
+v.Local.sGCGFile.Declare(String)
+v.Local.sUseFile.Declare(String)
+v.Local.sHTMLTemp.Declare(string)
+v.Local.sString.Declare(string)
+v.Local.sFileName.Declare(string)
+v.Local.iCount.Declare(long)
+v.Local.sValue.Declare(string)
+v.Local.iSleep.Declare(long)
+v.Local.sDtCheck.Declare(string)
+V.Local.sProjFold.Declare(String)
+v.Local.bCheck.Declare(boolean)
+
+
+f.Intrinsic.control.Try
+
+f.Intrinsic.String.Build("{0}\TrueView\4561",v.caller.GlobalDir,v.local.sProjFold)
+f.Intrinsic.file.DirExists(v.Local.sProjFold, v.Local.bCheck)
+f.Intrinsic.Control.If(v.Local.bCheck,<>,true)
+	f.Intrinsic.Control.CallSub(maint)
+f.Intrinsic.Control.EndIf
+
+
+
+'create job header datatable
+f.Data.DataTable.CreateFromSQL("JobHd","conx","select concat(Job,'-' + suffix) as Job_Suffix, RTRIM(part) as part, customer,date_due,product_line,customer_po from V_JOB_HEADER where product_line in ('RP','FG') and (left(part,3) in ('LBF','FHJ') or left(part,6) = 'PIC-LB' or left(part,5) = 'PICHJ' or left(part,3) = 'SVC') and date_closed = '1900-01-01' ",True)
+'create customer dictionary and fill customer name into job header table
+f.Data.Dictionary.CreateFromSQL("CustNm","conx","select customer, RTRIM(name_customer) as name_customer from V_CUSTOMER_MASTER")
+f.Data.Dictionary.SetDefaultReturn("custNm","")
+f.Data.DataTable.FillFromDictionary("jobHd","CustNm","customer")
+'create job opeartions dictionary with job suffix and job suffix sequence
+f.Data.Dictionary.CreateFromSQL("JobOpsAct","conx","select concat(job,'-' + suffix) as Job_Suffix, max(concat(job,'-' + suffix + '-' + seq)) as Job_Suffix_seq from V_JOB_OPERATIONS where LMO = 'L' and flag_Closed <> 'Y' and Hours_Actual > 0 and seq < '900000' group by job_suffix order by job_suffix_Seq Desc")
+f.Data.Dictionary.SetDefaultReturn("jobopsact","")
+'create job in process dictionary wuth job suffix sequence and employee working on job
+f.data.Dictionary.CreateFromSQL("JobInProc","conx","select concat(Job,'-' + Suffix + '-' + SEQ) as Job_Suffix, employee from V_JOBS_IN_PROCESS_G")
+f.Data.Dictionary.SetDefaultReturn("jobinproc","")
+f.data.Dictionary.CreateFromSQL("JobInProc2","conx","select concat(Job,'-' + Suffix) as Job_Suffix, concat(Job,'-' + Suffix + '-' + SEQ) as Job_Suffix_seq from V_JOBS_IN_PROCESS_G")
+f.Data.Dictionary.SetDefaultReturn("jobinproc2","")
+'create employee dictionary
+f.Data.Dictionary.CreateFromSQL("EmpNm","conx","select employee,RTrim(name) as name from EMPLOYEE_MSTR")
+'f.Data.DataTable.FillFromDictionary("JobHd","jobOpsAct","job_suffix")
+'create new employee and job suffix sequence columns
+F.Data.DataTable.AddColumn("JobHd","Employee","string")
+f.Data.DataTable.AddColumn("jobHd","Job_suffix_seq","string")
+'fill job header datatable with job suffix sequence and employee number 
+f.Data.DataTable.FillFromDictionary("JobHd","jobOpsAct","job_suffix","Job_Suffix_seq")
+f.Data.DataTable.AddColumn("jobHd","job_suffix_seq2","string")
+f.Data.DataTable.FillFromDictionary("jobHd","jobinproc2","job_suffix","job_suffix_seq2")
+f.Data.DataTable.FillFromDictionary("JobHd","JobInProc","job_suffix_seq2","employee")
+
+'replace employee number with employee name
+f.Data.DataTable.FillFromDictionary("JobHd","EmpNm","Employee")
+'create work order column with values from job_suffix_Seq and Job_suffix if the former has no value
+f.Data.Datatable.AddExpressionColumn("JobHd","Work_order","String","IIF(job_suffix_seq2 <> '', Job_suffix_seq2, IIF(Job_Suffix_seq = '', job_suffix,job_suffix_seq))")
+
+f.Data.Datatable.AddExpressionColumn("JobHd","JFlag","String","IIF(employee <> '', '1', IIF( job_suffix_Seq <> '', '2','3'))")
+
+
+'add columns with html syntaxed values for color codes
+f.Data.DataTable.AddExpressionColumn("jobHd","HTML_part","String","IIF(substring(part,1,6) = 'PIC-LB' or substring(part,1,5) = 'SVC-P' , '<td class=brown-cells>' + part, IIF(substring(part,1,5) = 'PICHJ', '<td class=black-cells>' + part,  IIF(substring(PART,1,3) = 'LBF' or substring(PART,1,5) = 'SVC-F' , '<td class=gray-cells>' + part, '<td class=yellow-cells>' + part)))")
+f.Data.DataTable.AddExpressionColumn("jobHd","HTML_WO_PL","String","IIF(Product_line = 'RP', '<td class=blue-cells>' + Work_Order, '<td class=green-cells>' + Work_Order)")
+f.Intrinsic.String.Build("IIF(date_due < '{0}', '<td class=red-cells>' + date_due, date_due)",v.Ambient.Date,v.Local.sDtCheck)
+f.Data.DataTable.AddExpressionColumn("jobHd","HTML_date","String",v.Local.sDtCheck)
+'sort by current work in prgress date due and job suffix
+f.Data.dataview.Create("JobHd","JobHdSort",22,"","jflag asc, date_due asc")
+
+
+'convert to string to rearrange columns.
+f.Data.DataView.ToString("JobHd","JobHdSort","html_date*!*Customer*!*html_part*!*Customer_po*!*employee*!*html_wo_pl","*!*","@!@",v.Local.sString)
+'add empty rows if row count greater than 30
+
+
+f.Intrinsic.Control.If(v.dataTable.jobhd.RowCount,>,"30")
+
+	f.Intrinsic.String.Build("*!**!**!**!**!*@!@*!**!**!**!**!*@!@*!**!**!**!**!*@!@*!**!**!**!**!*@!@*!**!**!**!**!*@!@{0}",v.Local.sString,v.Local.sString)
+	f.Intrinsic.String.Build("{0}@!@*!**!**!**!**!*@!@*!**!**!**!**!*@!@*!**!**!**!**!*@!@*!**!**!**!**!*@!@*!**!**!**!**!*",v.Local.sString,v.Local.sString)
+'	f.Intrinsic.string.Replace(v.Local.sString,"@!@<td","@!@<hd",v.Local.sString)
+'	f.Intrinsic.string.Replace(v.Local.sString,"*!*<td","*!*<hd",v.Local.sString)
+'	f.Intrinsic.String.replace(v.Local.sString,"<td","*!**!**!**!*@!@*!**!**!**!*@!@*!**!**!**!*@!@*!**!**!**!*@!@*!**!**!**!*@!@<td",v.Local.sString)
+'	f.Intrinsic.string.Replace(v.Local.sString,"@!@<hd","@!@<td",v.Local.sString)
+'	f.Intrinsic.string.Replace(v.Local.sString,"*!*<hd","*!*<td",v.Local.sString)
+f.Intrinsic.Control.EndIf
+'create HTML output table from string
+f.Data.DataTable.CreateFromString("htmlout",v.Local.sString, "datedue*!*customer*!*part*!*PO*!*employee*!*WO","string*!*string*!*string*!*string*!*string*!*string","*!*","@!@")	
+
+'export HTML output table to html format for firs table
+f.Data.datatable.ExportHTML("htmlout","","","TFtable",true,v.Local.sFile)
+Function.Intrinsic.String.Replace(v.Local.sfile,"<td><td","<td", v.Local.sFile)
+function.Intrinsic.String.Replace(v.Local.sFile,"12:00:00 AM","",v.Local.sFile)
+function.Intrinsic.String.Replace(v.Local.sFile,"class=green-cells","class="green-cells"",v.Local.sFile)
+function.Intrinsic.String.Replace(v.Local.sFile,"class=brown-cells","class="brown-cells"",v.Local.sFile)
+function.Intrinsic.String.Replace(v.Local.sFile,"class=black-cells","class="black-cells"",v.Local.sFile)
+function.Intrinsic.String.Replace(v.Local.sFile,"class=gray-cells","class="gray-cells"",v.Local.sFile)
+function.Intrinsic.String.Replace(v.Local.sFile,"class=yellow-cells","class="yellow-cells"",v.Local.sFile)
+function.Intrinsic.String.Replace(v.Local.sFile,"class=blue-cells","class="blue-cells"",v.Local.sFile)
+function.Intrinsic.String.Replace(v.Local.sFile,"class=red-cells","class="red-cells"",v.Local.sFile)
+function.Intrinsic.String.Replace(v.Local.sFile,"table id","table class",v.Local.sFile)
+function.Intrinsic.String.Replace(v.Local.sFile,"<tr>","<tr><td class="Empty">&nbsp;</td>",v.Local.sFile)
+function.Intrinsic.String.Replace(v.Local.sFile,"</tr>","<td class="Last">&nbsp;</td></tr>",v.Local.sFile)
+function.Intrinsic.String.Replace(v.Local.sFile,"<td>","<td class="data-cell">",v.Local.sFile)
+function.Intrinsic.String.Replace(v.Local.sFile,"<table class="TFtable">","<table class="TFtable"><tbody>",v.Local.sFile)
+function.Intrinsic.String.Replace(v.Local.sFile,"</table>","</tbody></table>",v.Local.sFile)
+'generate data table for second table
+f.Data.DataTable.CreateFromSQL("orderHd","conx","select order_no,Concat(order_no,'-' + record_no) as Sales_Order_Number,Date_Order,Date_item_prom,Customer,part from V_ORDER_LINES where Sales_order_number not in (Select Concat(Order_no,'-' + Order_line) from v_order_to_wo) and flag_so_to_wo <> 'Y' and Product_line = 'RP' order by date_order")
+'fill customer name from existing dictionary
+f.Data.DataTable.FillFromDictionary("OrderHd","CustNm","customer")
+f.Data.Dictionary.CreateFromSQL("CustPo","conx","select order_no, customer_po from V_order_header")
+f.Data.Dictionary.SetDefaultReturn("custPo","")
+f.Data.DataTable.AddColumn("OrderHd","Customer_po","string")
+f.Data.DataTable.FillFromDictionary("orderHd","CustPo","order_no","customer_po")
+
+'add HTML syntaxed data column
+f.Data.DataTable.AddExpressionColumn("OrderHd","HTML_part","String","IIF(substring(part,1,6) = 'PIC-LB' or substring(part,1,5) = 'SVC-P' , '<td class=brown-cells>' + part, IIF(substring(part,1,5) = 'PICHJ', '<td class=black-cells>' + part,  IIF(substring(PART,1,3) = 'LBF' or substring(PART,1,5) = 'SVC-F' , '<td class=gray-cells>' + part, '<td class=yellow-cells>' + part)))")
+'create view for converting to string
+f.Data.dataview.Create("orderHd", "OrderHdVw",22)
+'convert to string to rearrange columns.
+f.Data.DataView.ToString("OrderHd","OrderHdVw","Date_Order*!*customer*!*HTML_part*!*Sales_order_number*!*customer_po*!*Date_Item_Prom","*!*","@!@",v.Local.sString)
+'add empty rows if row count greater than 30
+f.Intrinsic.Control.If(v.dataTable.orderHd.RowCount,>,"30")
+
+	f.Intrinsic.String.Build("*!**!**!**!**!*@!@*!**!**!**!**!*@!@*!**!**!**!**!*@!@*!**!**!**!**!*@!@*!**!**!**!**!*@!@{0}",v.Local.sString,v.Local.sString)
+	f.Intrinsic.String.Build("{0}@!@*!**!**!**!**!*@!@*!**!**!**!**!*@!@*!**!**!**!**!*@!@*!**!**!**!**!*@!@*!**!**!**!**!*",v.Local.sString,v.Local.sString)
+'	f.Intrinsic.string.Replace(v.Local.sString,"@!@<td","@!@<hd",v.Local.sString)
+'	f.Intrinsic.string.Replace(v.Local.sString,"*!*<td","*!*<hd",v.Local.sString)
+'	f.Intrinsic.String.replace(v.Local.sString,"<td","*!**!**!**!*@!@*!**!**!**!*@!@*!**!**!**!*@!@*!**!**!**!*@!@*!**!**!**!*@!@<td",v.Local.sString)
+'	f.Intrinsic.string.Replace(v.Local.sString,"@!@<hd","@!@<td",v.Local.sString)
+'	f.Intrinsic.string.Replace(v.Local.sString,"*!*<hd","*!*<td",v.Local.sString)
+
+f.Intrinsic.Control.EndIf
+'create HTML output table from string
+f.Data.DataTable.CreateFromString("htmlout1",v.Local.sString, "Date_Order*!*customer*!*HTML_part*!*Sales_order_number*!*customer_po*!*Date_Item_Prom","string*!*string*!*string*!*string*!*string*!*string","*!*","@!@")
+'export HTML output table to html format
+f.Data.datatable.ExportHTML("htmlout1","","","TFtable",true,v.Local.sFile1)
+Function.Intrinsic.String.Replace(v.Local.sfile1,"<td><td","<td", v.Local.sFile1)
+function.Intrinsic.String.Replace(v.Local.sFile1,"12:00:00 AM","",v.Local.sFile1)
+function.Intrinsic.String.Replace(v.Local.sFile1,"class=black-cells","class="black-cells"",v.Local.sFile1)
+function.Intrinsic.String.Replace(v.Local.sFile1,"class=yellow-cells","class="yellow-cells"",v.Local.sFile1)
+function.Intrinsic.String.Replace(v.Local.sFile1,"class=brown-cells","class="brown-cells"",v.Local.sFile1)
+function.Intrinsic.String.Replace(v.Local.sFile1,"class=gray-cells","class="gray-cells"",v.Local.sFile1)
+function.Intrinsic.String.Replace(v.Local.sFile1,"class=yellow-cells","class="yellow-cells"",v.Local.sFile1)
+function.Intrinsic.String.Replace(v.Local.sFile1,"table id","table class",v.Local.sFile1)
+function.Intrinsic.String.Replace(v.Local.sFile1,"<tr>","<tr><td class="Empty">&nbsp;</td>",v.Local.sFile1)
+function.Intrinsic.String.Replace(v.Local.sFile1,"</tr>","<td class="Last">&nbsp;</td></tr>",v.Local.sFile1)
+function.Intrinsic.String.Replace(v.Local.sFile1,"<td>","<td class="data-cell">",v.Local.sFile1)
+function.Intrinsic.String.Replace(v.Local.sFile1,"<table class="TFtable">","<table class="TFtable"><tbody>",v.Local.sFile1)
+function.Intrinsic.String.Replace(v.Local.sFile1,"</table>","</tbody></table>",v.Local.sFile1)
+
+
+'get template file and load into string variable
+f.Intrinsic.String.Build("{0}\trueview\4561\GCG_4561_RP_FG_Trueview_temp.html",v.Caller.Globaldir,v.Local.sGCGFile)
+'f.Intrinsic.String.Build("C:\Users\adsouza\Desktop\4561\GCG_WO_4561_temp.html","",v.Local.sGCGFile)
+f.Intrinsic.File.File2String(v.Local.sGCGFile,v.Local.sHTMLTemp)
+f.Intrinsic.String.Replace(v.Local.sHtmlTemp,"#table2",v.Local.sFile,v.Local.sHTMLTemp)
+f.Intrinsic.String.Replace(v.Local.sHtmlTemp,"#table1",v.Local.sFile1,v.Local.sHTMLTemp)
+'get refresh rate in minutes and conver to milli seconds
+f.Intrinsic.String.Build("{0}\TrueView\4561\Sleep.txt",v.Caller.GlobalDir,v.local.sString)
+f.Intrinsic.File.File2String(v.Local.sString,v.local.sString)
+f.intrinsic.math.ConvertToLong(v.local.sString,v.Local.iSleep)
+f.Intrinsic.Math.Mult(v.Local.iSleep,60000,v.Local.iSleep)
+f.Intrinsic.String.Replace(v.Local.sHtmlTemp,"#sleep",v.Local.iSleep,v.Local.sHTMLTemp)
+
+f.Intrinsic.String.Build("{0}\trueview\4561\GCG_4561_RP_FG_Trueview.html",v.Caller.GlobalDir,v.Local.sGCGFile)
+f.Intrinsic.String.Build("{0}\trueview\4561\MyTrueView.html",v.Caller.GlobalDir,v.Local.sUseFile)
+'f.Intrinsic.String.Build("C:\Users\adsouza\Desktop\4561\GCG_WO_4561.html","",v.Local.sGCGFile)
+f.Intrinsic.file.String2File(v.Local.sGCGFile,v.Local.sHTMLTemp)
+f.Intrinsic.File.Exists(v.Local.sGCGFile,v.Local.bCheck)
+f.Intrinsic.Control.If(v.Local.bCheck,=,true)
+	f.Intrinsic.File.CopyFile(v.Local.sGCGFile,v.Local.sUseFile)
+f.Intrinsic.Control.EndIf
+f.intrinsic.Control.If(v.Caller.Switches,=,"O")
+	f.Intrinsic.Task.ShellExec(v.Local.iCount,"Open",v.Local.sUseFile,"","",1)
+f.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.CallSub(fTrueViewMaint_UnLoad)
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+
+	
+	
+Program.Sub.TrueView.End
+
+Program.Sub.fTrueViewMaint_UnLoad.Start
+f.ODBC.Connection!conx.close
+f.Intrinsic.Control.End
+
+Program.Sub.fTrueViewMaint_UnLoad.End
+
+Program.Sub.CmdBrowse_Click.Start
+f.Intrinsic.Control.Try
+v.local.sFile.Declare(string)
+v.local.sFileName.Declare(string)
+'open file dialog where you can only select png and return a value
+F.intrinsic.UI.ShowOpenFileDialog("","PNG|*.png",v.Local.sFile)
+'check if returned value is not cancel and load file name into text field followed by file path into metadata
+f.Intrinsic.Control.If(v.Local.sFile,<>,"***CANCEL***")	
+	f.Intrinsic.File.GetFileNameFromFQN(v.Local.sFile,v.Local.sFileName)
+	gui.fTrueViewMaint.txtFileLoc1.Text(v.Local.sFileName)
+	gui.fTrueViewMaint.txtFileLoc1.SetMetaData(v.Local.sFile)
+f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+Program.Sub.CmdBrowse_Click.End
+
+Program.Sub.cmdSave_Click.Start
+v.Local.sCheckType.declare(string)
+v.Local.sDefault.Declare(string)
+v.Local.sFile.Declare(string)
+f.Intrinsic.Control.Try
+'check if file in metadata exists else copy default png from global\art directory 
+f.Intrinsic.String.Build("{0}\TrueView\4561\CompanyLogo.png",v.Caller.GlobalDir,v.local.sFile)
+f.Intrinsic.control.If(v.Screen.fTrueViewMaint!txtFileLoc1.MetaData0,<>,"")
+	f.Intrinsic.Control.If(v.Screen.fTrueViewMaint!txtFileLoc1.MetaData0,<>,v.Local.sFile)
+		f.Intrinsic.file.CopyFile(v.Screen.fTrueViewMaint!txtFileLoc1.MetaData0,v.local.sFile)
+	f.Intrinsic.Control.EndIf
+f.Intrinsic.control.Else
+	f.Intrinsic.String.Build("{0}\art\GAB_GSS_Logo_Green_Dash.png",v.Caller.GlobalDir,v.Local.sDefault)
+	f.Intrinsic.file.CopyFile(v.Local.sDefault,v.local.sFile)
+f.Intrinsic.Control.EndIf
+'check if refresh rate value in text field exist. if it is less than one create default file with value 2 else create file with given value
+f.Intrinsic.String.Build("{0}\TrueView\4561\Sleep.txt",v.Caller.GlobalDir,v.local.sFile)
+f.Intrinsic.control.If(v.Screen.fTrueViewMaint!txtRefreshRt.text.long,<,1)
+f.Intrinsic.file.string2file(v.Local.sFile,"2")
+f.Intrinsic.Control.else
+f.Intrinsic.File.String2File(v.Local.sFile,v.Screen.fTrueViewMaint!txtRefreshRt.text)
+f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.CallSub(fTrueViewMaint_UnLoad)
+f.Intrinsic.Control.catch
+f.Intrinsic.Control.CallSub(catching,"sub",v.Ambient.CurrentSubroutine,"errorno",v.Ambient.ErrorNumber,"errordesc",v.Ambient.ErrorDescription)
+f.Intrinsic.Control.EndTry
+
+
+
+Program.Sub.cmdSave_Click.End
+
+Program.Sub.catching.Start
+v.Local.sError.declare(string)
+Function.Intrinsic.String.Concat(v.Ambient.Now,": Project: GCG_4561_RP_FG_Trueview.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",v.Args.sub,V.Ambient.NewLine,"Error Occurred ",V.Args.errorno," with description ",V.args.errordesc,V.Local.sError)
+f.Intrinsic.Control.If(v.Caller.Switches,=,"M")
+	f.Intrinsic.UI.Msgbox(v.Local.sError)
+f.Intrinsic.Control.Else
+	f.Intrinsic.Debug.SetLA(v.Local.sError)
+f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.CallSub(fTrueViewMaint_UnLoad)
+Program.Sub.catching.End
